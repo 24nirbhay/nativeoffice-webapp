@@ -1,0 +1,86 @@
+# Cline ignore rules
+# IMPORTANT: .clineignore reduces what Cline can access/search.
+# It is NOT a complete defense against prompt injection or malicious commands.
+
+# Git / repository internals
+.git/
+.git/**
+.gitignore
+
+# Dependencies / generated files
+node_modules/
+**/node_modules/
+dist/
+build/
+out/
+coverage/
+.cache/
+.next/
+.nuxt/
+.vite/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*secret*
+*secrets*
+*credential*
+*credentials*
+*token*
+*password*
+*passwd*
+*.secret
+*.kdbx
+
+# SSH / cloud credentials
+.ssh/
+.aws/
+.azure/
+.gcloud/
+.kube/
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+*.tfvars.json
+
+# Local databases / dumps / logs
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql
+*.log
+
+# Archives and potentially untrusted bulk data
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
+# Large/media/data directories
+uploads/
+upload/
+tmp/
+temp/
+data/
+datasets/
+backups/
+
+# OS/editor metadata
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.vscode/*.json
+
+# Cline itself
+.cline/
