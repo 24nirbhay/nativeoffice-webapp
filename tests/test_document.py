@@ -206,7 +206,7 @@ def test_example(page: Page) -> None:
         exact=True
     ).click()
 
-    # ==================== RETURN HOME ====================
+    # ==================== RETURN HOME ========================
 
     page.get_by_role(
         "link",
