@@ -1,7 +1,8 @@
 from playwright.sync_api import Page, expect
+import playwright 
 
 
-def test_example(page: Page) -> None:
+def test_doc(page: Page) -> None:
     page.goto("https://tools.nativeoffice.online/")
 
     # ==================== OPEN DOCUMENT ====================
