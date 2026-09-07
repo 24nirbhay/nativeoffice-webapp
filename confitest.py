@@ -4,8 +4,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-import pytest_html
-from pytest_metadata.plugin import metadata_key
+from importlib import import_module
+
+
+pytest_html = import_module("pytest_html")
+metadata_key = import_module("pytest_metadata.plugin").metadata_key
 
 
 def _report_dir() -> Path:
@@ -60,7 +63,7 @@ def _impact(item):
 
 def pytest_configure(config):
     if hasattr(config, "stash"):
-        config.stash[metadata_key]["Tester"] = "myname"
+        config.stash[metadata_key]["Tester"] = "Peru"
         config.stash[metadata_key]["Application"] = "NativeOffice"
         config.stash[metadata_key]["Environment"] = "CI"
         config.stash[metadata_key]["Report Generated"] = (
