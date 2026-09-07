@@ -16,7 +16,10 @@ def _report_dir() -> Path:
     Directory supplied by the CI workflow for the current test module.
     Falls back to local artifacts/report when running manually.
     """
-    path = os.getenv("REPORT_DIR", "artifacts/report")
+    path = os.getenv(
+        "REPORT_DIR",
+        f"artifacts/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    )
     directory = Path(path)
     directory.mkdir(parents=True, exist_ok=True)
     return directory
