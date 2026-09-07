@@ -16,7 +16,7 @@ def test_example(page: Page) -> None:
     page.get_by_role("button", name="Use #315fe8").click()
     page.get_by_role("button", name="Done").click()
     page.get_by_role("button", name="Create New").click()
-    page.get_by_role("button", name="Document A clean writing page").click()
+    page.get_by_role("button", name="doc").click()
     page.get_by_role("paragraph").filter(has_text=re.compile(r"^$")).click()
     page.locator("#editor").get_by_role("textbox").fill("hello")
     page.get_by_role("button", name="Share").click()

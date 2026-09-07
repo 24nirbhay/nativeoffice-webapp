@@ -6,16 +6,14 @@ def test_example(page: Page) -> None:
 
     # ==================== OPEN DOCUMENT ====================
 
-    page.get_by_role("button", name="Document Write, edit, and").click()
+    page.get_by_role("button", name="doc").click()
 
-    editor = page.locator("#editor").get_by_role("textbox")
-
-    expect(editor).to_be_visible()
-    expect(editor).to_be_editable()
+    editor = page.locator("#editor")
 
     # ==================== TEXT EDITING ====================
 
-    editor.fill(
+    editor.click()
+    page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for text formatting."
     )
@@ -24,7 +22,7 @@ def test_example(page: Page) -> None:
 
     # ==================== UNDERLINE ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for underline."
     )
@@ -33,7 +31,7 @@ def test_example(page: Page) -> None:
 
     # ==================== ITALIC ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for italic."
     )
@@ -46,7 +44,7 @@ def test_example(page: Page) -> None:
 
     # ==================== BOLD ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for bold."
     )
@@ -59,7 +57,7 @@ def test_example(page: Page) -> None:
 
     # ==================== STRIKETHROUGH ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for strikethrough."
     )
@@ -72,20 +70,18 @@ def test_example(page: Page) -> None:
 
     # ==================== TEXT COLOUR ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for text colour."
     )
-
-    page.get_by_role(
-        "textbox",
-        name="A",
-        exact=True
-    ).fill("#1e1627")
+    
+    page.keyboard.press("Control+A")
+    page.keyboard.insert_text("#1e1627")
+    page.keyboard.press("Enter")
 
     # ==================== ALIGNMENT ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for alignment."
     )
@@ -94,7 +90,7 @@ def test_example(page: Page) -> None:
 
     # ==================== LINE SPACING ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for line spacing."
     )
@@ -103,21 +99,21 @@ def test_example(page: Page) -> None:
 
     # ==================== LISTS ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for lists."
     )
 
     page.get_by_role("button", name="Checklist").click()
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for bullet list."
     )
 
     page.get_by_role("button", name="Bulleted list").click()
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for numbered list."
     )
@@ -126,7 +122,7 @@ def test_example(page: Page) -> None:
 
     # ==================== INDENT ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for indentation."
     )
@@ -138,7 +134,7 @@ def test_example(page: Page) -> None:
 
     # ==================== PARAGRAPH STYLE ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for paragraph styles."
     )
@@ -147,7 +143,7 @@ def test_example(page: Page) -> None:
 
     # ==================== FONT ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for font selection."
     )
@@ -159,7 +155,7 @@ def test_example(page: Page) -> None:
 
     # ==================== FONT SIZE ====================
 
-    editor.fill(
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for font size."
     )

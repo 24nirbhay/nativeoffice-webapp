@@ -1,0 +1,267 @@
+name: NativeOffice QA Reports
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "nativeoffice-qa-pages"
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run QA Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install --with-deps chromium
+
+      - name: Create report directory
+        run: |
+          RUN_ID="$(date -u +'%Y%m%d-%H%M%S')"
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+          mkdir -p "site/$RUN_ID"
+
+      - name: Run test modules
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+
+          OVERALL_STATUS=0
+
+          for TEST_FILE in tests/test_*.py; do
+
+            MODULE="$(basename "$TEST_FILE" .py)"
+
+            MODULE_DIR="$GITHUB_WORKSPACE/site/$RUN_ID/$MODULE"
+
+            mkdir -p "$MODULE_DIR/screenshots"
+            mkdir -p "$MODULE_DIR/test-results"
+
+            echo "========================================"
+            echo "Running: $MODULE"
+            echo "========================================"
+
+            REPORT_DIR="$MODULE_DIR" \
+            pytest "$TEST_FILE" \
+              --html="$MODULE_DIR/report.html" \
+              --self-contained-html \
+              --output="$MODULE_DIR/test-results"
+
+            STATUS=$?
+
+            if [ "$STATUS" -ne 0 ]; then
+              OVERALL_STATUS=1
+            fi
+
+          done
+
+          echo "$OVERALL_STATUS" > "site/$RUN_ID/test-status.txt"
+
+      - name: Generate master dashboard
+        shell: python
+        run: |
+          from pathlib import Path
+          from html import escape
+
+          root = Path("site") / "${{ env.RUN_ID }}"
+
+          modules = sorted(
+              p for p in root.iterdir()
+              if p.is_dir()
+          )
+
+          cards = []
+
+          for module in modules:
+              report = module / "report.html"
+
+              if not report.exists():
+                  continue
+
+              cards.append(
+                  f"""
+                  <a class="card" href="{escape(module.name)}/report.html">
+                      <div class="module">{escape(module.name)}</div>
+                      <div class="label">Open test report →</div>
+                  </a>
+                  """
+              )
+
+          status_file = root / "test-status.txt"
+          status = status_file.read_text().strip() if status_file.exists() else "0"
+
+          overall = "PASS" if status == "0" else "FAILURES DETECTED"
+
+          html = f"""
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>NativeOffice QA Dashboard</title>
+
+              <style>
+                  * {{
+                      box-sizing: border-box;
+                  }}
+
+                  body {{
+                      margin: 0;
+                      padding: 40px;
+                      font-family: Inter, Arial, sans-serif;
+                      background: #f5f7fa;
+                      color: #111827;
+                  }}
+
+                  .container {{
+                      max-width: 1000px;
+                      margin: auto;
+                  }}
+
+                  h1 {{
+                      margin-bottom: 6px;
+                  }}
+
+                  .subtitle {{
+                      color: #6b7280;
+                      margin-bottom: 30px;
+                  }}
+
+                  .status {{
+                      display: inline-block;
+                      padding: 7px 12px;
+                      border-radius: 999px;
+                      background: #e5e7eb;
+                      font-size: 13px;
+                      font-weight: 700;
+                      margin-bottom: 28px;
+                  }}
+
+                  .grid {{
+                      display: grid;
+                      grid-template-columns:
+                          repeat(auto-fit, minmax(220px, 1fr));
+                      gap: 16px;
+                  }}
+
+                  .card {{
+                      display: block;
+                      padding: 22px;
+                      background: white;
+                      border: 1px solid #e5e7eb;
+                      border-radius: 12px;
+                      text-decoration: none;
+                      color: inherit;
+                  }}
+
+                  .card:hover {{
+                      border-color: #315fe8;
+                  }}
+
+                  .module {{
+                      font-size: 17px;
+                      font-weight: 700;
+                      margin-bottom: 8px;
+                  }}
+
+                  .label {{
+                      font-size: 13px;
+                      color: #6b7280;
+                  }}
+
+                  .footer {{
+                      margin-top: 35px;
+                      color: #9ca3af;
+                      font-size: 12px;
+                  }}
+              </style>
+          </head>
+
+          <body>
+              <main class="container">
+                  <h1>NativeOffice QA Dashboard</h1>
+
+                  <div class="subtitle">
+                      Automated Playwright / Pytest execution
+                  </div>
+
+                  <div class="status">
+                      {escape(overall)}
+                  </div>
+
+                  <div class="grid">
+                      {"".join(cards)}
+                  </div>
+
+                  <div class="footer">
+                      Run: {escape(root.name)}
+                  </div>
+              </main>
+          </body>
+          </html>
+          """
+
+          (root / "index.html").write_text(
+              html,
+              encoding="utf-8"
+          )
+
+          # Root entry point for the GitHub Pages site.
+          (Path("site") / "index.html").write_text(
+              f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <meta http-equiv="refresh"
+                        content="0; url={root.name}/index.html">
+              </head>
+              <body>
+                  Opening latest NativeOffice QA report...
+              </body>
+              </html>
+              """,
+              encoding="utf-8"
+          )
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report URL
+        run: |
+          echo "QA Report:"
+          echo "${{ steps.deployment.outputs.page_url }}"
