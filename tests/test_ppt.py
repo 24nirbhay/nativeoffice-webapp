@@ -36,3 +36,8 @@ def test_ppt(page: Page) -> None:
     image_url.fill("https://pin.it/1E7iVTD3P")
 
     page.locator(".dialog-actions .btn-primary").click()
+
+    page.locator('a.brand[href="/"]').click()
+    expect(page).to_have_url(
+        "https://tools.nativeoffice.online/"
+    )

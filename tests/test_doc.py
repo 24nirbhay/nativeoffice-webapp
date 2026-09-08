@@ -205,7 +205,7 @@ def test_doc(page: Page) -> None:
 
     # ==================== RETURN HOME ========================
 
-    page.get_by_role(
-        "link",
-        name="NativeOffice"
-    ).click()
+    page.locator('a.brand[href="/"]').click()
+    expect(page).to_have_url(
+        "https://tools.nativeoffice.online/"
+    )
