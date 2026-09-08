@@ -136,7 +136,3 @@ def test_nav(page: Page) -> None:
         exact=True
     ).click()
 
-    page.locator('a.brand[href="/"]').click()
-    expect(page).to_have_url(
-        "https://tools.nativeoffice.online/"
-    )

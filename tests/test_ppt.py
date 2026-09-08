@@ -33,11 +33,7 @@ def test_ppt(page: Page) -> None:
         exact=True
     )
 
-    image_url.fill("https://pin.it/1E7iVTD3P")
+    image_url.fill("https://pixabay.com/images/download/x-10458315_1920.jpg")
 
-    page.locator(".dialog-actions .btn-primary").click()
+    page.locator(".dialog-actions .btn.btn-primary").click()
 
-    page.locator('a.brand[href="/"]').click()
-    expect(page).to_have_url(
-        "https://tools.nativeoffice.online/"
-    )

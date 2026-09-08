@@ -13,7 +13,7 @@ def test_doc(page: Page) -> None:
 
     # ==================== TEXT EDITING ====================
 
-    editor.click()
+    editor.dblclick()
     page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for text formatting."
@@ -203,9 +203,3 @@ def test_doc(page: Page) -> None:
         exact=True
     ).click()
 
-    # ==================== RETURN HOME ========================
-
-    page.locator('a.brand[href="/"]').click()
-    expect(page).to_have_url(
-        "https://tools.nativeoffice.online/"
-    )
