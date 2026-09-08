@@ -13,7 +13,7 @@ def test_doc(page: Page) -> None:
 
     # ==================== TEXT EDITING ====================
 
-    editor.dblclick()
+    editor.click()
     page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for text formatting."
