@@ -104,17 +104,44 @@ jobs:
               if not report.exists():
                   continue
 
+              test_results = module / "test-results"
+              screenshots = list(test_results.rglob("*.png")) if test_results.exists() else []
+              traces = list(test_results.rglob("trace.zip")) if test_results.exists() else []
+
+              evidence = []
+
+              if screenshots:
+                  evidence.append(
+                      f"{len(screenshots)} screenshot(s)"
+                  )
+
+              if traces:
+                  evidence.append(
+                      f"{len(traces)} trace(s)"
+                  )
+
+              evidence_text = (
+                  " • ".join(evidence)
+                  if evidence
+                  else "No failure evidence"
+              )
+
               cards.append(
                   f"""
                   <a class="card" href="{escape(module.name)}/report.html">
                       <div class="module">{escape(module.name)}</div>
                       <div class="label">Open test report →</div>
+                      <div class="evidence">{escape(evidence_text)}</div>
                   </a>
                   """
               )
 
           status_file = root / "test-status.txt"
-          status = status_file.read_text().strip() if status_file.exists() else "0"
+          status = (
+              status_file.read_text().strip()
+              if status_file.exists()
+              else "0"
+          )
 
           overall = "PASS" if status == "0" else "FAILURES DETECTED"
 
@@ -124,6 +151,7 @@ jobs:
           <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1">
+
               <title>NativeOffice QA Dashboard</title>
 
               <style>
@@ -195,6 +223,12 @@ jobs:
                       color: #6b7280;
                   }}
 
+                  .evidence {{
+                      margin-top: 12px;
+                      font-size: 12px;
+                      color: #9ca3af;
+                  }}
+
                   .footer {{
                       margin-top: 35px;
                       color: #9ca3af;
@@ -205,6 +239,7 @@ jobs:
 
           <body>
               <main class="container">
+
                   <h1>NativeOffice QA Dashboard</h1>
 
                   <div class="subtitle">
@@ -222,6 +257,7 @@ jobs:
                   <div class="footer">
                       Run: {escape(root.name)}
                   </div>
+
               </main>
           </body>
           </html>
@@ -232,7 +268,7 @@ jobs:
               encoding="utf-8"
           )
 
-          # Root entry point for the GitHub Pages site.
+          # Root entry point for GitHub Pages.
           (Path("site") / "index.html").write_text(
               f"""
               <!DOCTYPE html>
