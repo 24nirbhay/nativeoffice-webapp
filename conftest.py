@@ -512,223 +512,188 @@ def pytest_html_results_summary(prefix, summary, postfix):
             overview,
             """
             <style>
-
-                /* -----------------------------------------
-                   NativeOffice QA report
-                ----------------------------------------- */
+                :root {
+                    --qa-ink: #172033;
+                    --qa-muted: #687386;
+                    --qa-line: #dfe5ee;
+                    --qa-surface: #ffffff;
+                    --qa-canvas: #f3f6fa;
+                    --qa-accent: #e85d3f;
+                    --qa-shadow: 0 12px 30px rgba(23, 32, 51, 0.07);
+                }
 
                 body {
-                    font-family:
-                        Inter,
-                        -apple-system,
-                        BlinkMacSystemFont,
-                        "Segoe UI",
-                        Arial,
-                        sans-serif !important;
-
-                    background: #f6f7fb !important;
-                    color: #111827 !important;
+                    min-width: 0 !important;
+                    margin: 0 auto !important;
+                    padding: 28px clamp(14px, 3vw, 42px) 48px !important;
+                    max-width: 1480px;
+                    font-family: "Avenir Next", "Segoe UI", sans-serif !important;
+                    background: var(--qa-canvas) !important;
+                    color: var(--qa-ink) !important;
+                    line-height: 1.45;
                 }
 
                 h1 {
-                    font-weight: 750 !important;
-                    letter-spacing: -0.5px;
+                    font-size: clamp(24px, 3vw, 34px) !important;
+                    font-weight: 800 !important;
+                    letter-spacing: -0.8px;
                 }
 
-                /* Metadata / summary area */
+                .qa-header,
+                .qa-overview {
+                    margin: 18px 0 22px;
+                    padding: clamp(18px, 3vw, 28px);
+                    border: 1px solid var(--qa-line);
+                    border-radius: 18px;
+                    background: var(--qa-surface);
+                    box-shadow: var(--qa-shadow);
+                }
 
                 .qa-header {
-                    margin: 20px 0 24px;
-                    padding: 22px 24px;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 16px;
-                    background: #ffffff;
-                    box-shadow:
-                        0 4px 18px rgba(15, 23, 42, 0.05);
+                    position: relative;
+                    overflow: hidden;
+                    border-top: 4px solid var(--qa-accent);
                 }
 
                 .qa-title {
                     margin: 0 0 6px;
-                    font-size: 20px;
-                    font-weight: 750;
-                    color: #111827;
+                    color: var(--qa-ink);
+                    font-size: 22px;
+                    font-weight: 800;
+                    letter-spacing: -0.4px;
                 }
 
-                .qa-subtitle {
-                    margin: 0;
-                    color: #6b7280;
+                .qa-subtitle,
+                .qa-overview p,
+                .qa-coverage-table small {
+                    color: var(--qa-muted);
                     font-size: 13px;
                 }
+
+                .qa-subtitle { margin: 0; }
 
                 .qa-status {
                     display: inline-flex;
                     align-items: center;
-                    gap: 7px;
-                    margin-top: 14px;
+                    gap: 8px;
+                    margin-top: 16px;
                     padding: 7px 11px;
+                    border: 1px solid #cce9db;
                     border-radius: 999px;
-                    background: #f3f4f6;
-                    color: #374151;
+                    background: #effaf4;
+                    color: #18734a;
                     font-size: 12px;
-                    font-weight: 700;
-                }
-
-                .qa-overview {
-                    margin: 20px 0 24px;
-                    padding: 22px 24px;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 16px;
-                    background: #ffffff;
-                    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+                    font-weight: 750;
                 }
 
                 .qa-overview h2 {
                     margin: 0 0 5px;
-                    font-size: 18px;
+                    font-size: 20px;
+                    letter-spacing: -0.3px;
                 }
 
-                .qa-overview p {
-                    margin: 0 0 15px;
-                    color: #6b7280;
-                    font-size: 13px;
-                }
+                .qa-overview p { margin: 0 0 17px; }
 
                 .qa-counts {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 8px;
-                    margin-bottom: 16px;
+                    gap: 9px;
+                    margin-bottom: 20px;
                 }
 
-                .qa-count {
+                .qa-count,
+                .qa-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    width: fit-content;
                     padding: 6px 10px;
                     border-radius: 999px;
                     font-size: 11px;
-                    font-weight: 700;
+                    font-weight: 750;
+                    white-space: nowrap;
                 }
 
-                .qa-count strong {
-                    margin-left: 4px;
-                }
+                .qa-count strong { margin-left: 5px; }
+                .qa-pass, .qa-functional { background: #e9f8ef; color: #18734a; }
+                .qa-fail, .qa-error, .qa-critical { background: #ffebe8; color: #b33a2c; }
+                .qa-gap, .qa-medium { background: #fff3dc; color: #9a5b08; }
+                .qa-ui { background: #eeeafd; color: #5b45a8; }
 
-                .qa-pass { background: #ecfdf5; color: #047857; }
-                .qa-fail, .qa-error { background: #fef2f2; color: #b91c1c; }
-                .qa-gap { background: #fff7ed; color: #c2410c; }
-
-                .qa-table-wrap {
-                    overflow-x: auto;
-                }
+                .qa-table-wrap { overflow-x: auto; }
 
                 .qa-coverage-table {
                     width: 100%;
                     min-width: 980px;
-                    border-collapse: collapse;
+                    border-collapse: separate;
+                    border-spacing: 0;
                     box-shadow: none;
                 }
 
                 .qa-coverage-table th,
                 .qa-coverage-table td {
-                    padding: 9px;
-                    border-bottom: 1px solid #eef0f4;
+                    padding: 12px 11px;
+                    border-bottom: 1px solid #edf0f4;
                     text-align: left;
                     vertical-align: top;
-                }
-
-                .qa-coverage-table small {
-                    color: #6b7280;
                 }
 
                 .qa-dot {
                     width: 7px;
                     height: 7px;
                     border-radius: 50%;
-                    background: #22c55e;
+                    background: #2fb673;
+                    box-shadow: 0 0 0 4px #dff5e8;
                 }
 
-                /* Table */
-
                 table {
+                    border: 1px solid var(--qa-line) !important;
                     border-radius: 14px !important;
                     overflow: hidden;
-                    border: 1px solid #e5e7eb !important;
-                    box-shadow:
-                        0 4px 18px rgba(15, 23, 42, 0.04);
+                    box-shadow: 0 8px 22px rgba(23, 32, 51, 0.04);
                 }
 
                 th {
-                    background: #f9fafb !important;
-                    font-size: 12px !important;
-                    font-weight: 700 !important;
-                    color: #6b7280 !important;
+                    background: #f7f9fc !important;
+                    color: var(--qa-muted) !important;
+                    font-size: 11px !important;
+                    font-weight: 800 !important;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
                 }
 
-                td {
-                    font-size: 13px !important;
-                }
+                td { font-size: 13px !important; }
+                tr:hover td { background: #fbfcfe !important; }
 
-                tr:hover td {
-                    background: #fafafa !important;
-                }
-
-                /* QA badges */
-
-                .qa-badge {
-                    display: inline-block;
-                    padding: 5px 9px;
-                    border-radius: 999px;
-                    font-size: 11px;
-                    font-weight: 700;
-                    white-space: nowrap;
-                }
-
-                .qa-ui {
-                    background: #eef2ff;
-                    color: #4338ca;
-                }
-
-                .qa-functional {
-                    background: #ecfdf5;
-                    color: #047857;
-                }
-
-                .qa-critical {
-                    background: #fef2f2;
-                    color: #b91c1c;
-                }
-
-                .qa-medium {
-                    background: #fff7ed;
-                    color: #c2410c;
-                }
-
-                /* Failure evidence */
-
-                .qa-evidence {
-                    margin: 8px 0;
-                }
+                .qa-evidence { margin: 8px 0; }
 
                 .qa-button {
                     display: inline-block;
                     padding: 8px 12px;
+                    border: 1px solid #27334a;
                     border-radius: 9px;
-                    background: #111827;
+                    background: #27334a;
                     color: #ffffff !important;
                     text-decoration: none !important;
                     font-size: 12px;
-                    font-weight: 650;
-                    transition: opacity 0.15s ease;
+                    font-weight: 700;
                 }
 
-                .qa-button:hover {
-                    opacity: 0.8;
-                }
+                .qa-button:hover { background: var(--qa-accent); border-color: var(--qa-accent); }
 
                 code {
+                    border: 1px solid var(--qa-line);
                     border-radius: 5px;
                     padding: 2px 5px;
-                    background: #f3f4f6;
+                    background: #f7f9fc;
+                    color: #b33a2c;
                 }
 
+                @media (max-width: 640px) {
+                    body { padding: 16px 10px 30px !important; }
+                    .qa-header, .qa-overview { border-radius: 14px; padding: 16px; }
+                    .qa-title { font-size: 19px; }
+                    .qa-count { flex: 1 1 calc(50% - 9px); justify-content: space-between; }
+                }
             </style>
 
             <div class="qa-header">

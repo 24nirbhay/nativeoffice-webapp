@@ -164,8 +164,12 @@ jobs:
               cards.append(
                   f"""
                   <a class="card" href="{escape(module.name)}/report.html">
+                      <div class="card-topline">
+                          <span class="module-kicker">TEST MODULE</span>
+                          <span class="card-arrow" aria-hidden="true">↗</span>
+                      </div>
                       <div class="module">{escape(module.name)}</div>
-                      <div class="label">Open test report →</div>
+                      <div class="label">Open test report</div>
                       <div class="evidence">{escape(evidence_text)}</div>
                   </a>
                   """
@@ -223,131 +227,109 @@ jobs:
               <title>NativeOffice QA Dashboard</title>
 
               <style>
-                  * {{
-                      box-sizing: border-box;
+                  * {{ box-sizing: border-box; }}
+
+                  :root {{
+                      --ink: #172033;
+                      --muted: #687386;
+                      --line: #dfe5ee;
+                      --canvas: #f3f6fa;
+                      --surface: #ffffff;
+                      --accent: #e85d3f;
+                      --shadow: 0 14px 34px rgba(23, 32, 51, 0.08);
                   }}
 
                   body {{
                       margin: 0;
-                      padding: 40px;
-                      font-family: Inter, Arial, sans-serif;
-                      background: #f5f7fa;
-                      color: #111827;
+                      padding: clamp(20px, 5vw, 64px) clamp(14px, 4vw, 48px);
+                      font-family: "Avenir Next", "Segoe UI", sans-serif;
+                      background: var(--canvas);
+                      color: var(--ink);
+                      line-height: 1.45;
                   }}
 
-                  .container {{
-                      max-width: 1000px;
-                      margin: auto;
-                  }}
+                  .container {{ max-width: 1180px; margin: auto; }}
 
                   h1 {{
-                      margin-bottom: 6px;
+                      margin: 0 0 7px;
+                      font-size: clamp(27px, 4vw, 44px);
+                      letter-spacing: -1.2px;
+                      line-height: 1.05;
                   }}
 
-                  .subtitle {{
-                      color: #6b7280;
-                      margin-bottom: 30px;
-                  }}
+                  h2 {{ margin: 38px 0 14px; font-size: 20px; letter-spacing: -0.3px; }}
+
+                  .subtitle {{ color: var(--muted); margin: 0 0 20px; font-size: 14px; }}
 
                   .status {{
-                      display: inline-block;
-                      padding: 7px 12px;
+                      display: inline-flex;
+                      margin-bottom: 24px;
+                      padding: 7px 11px;
+                      border: 1px solid #f2c9c1;
                       border-radius: 999px;
-                      background: #e5e7eb;
-                      font-size: 13px;
-                      font-weight: 700;
-                      margin-bottom: 28px;
+                      background: #fff1ee;
+                      color: #b33a2c;
+                      font-size: 12px;
+                      font-weight: 800;
+                      letter-spacing: 0.02em;
                   }}
 
                   .grid {{
                       display: grid;
-                      grid-template-columns:
-                          repeat(auto-fit, minmax(220px, 1fr));
-                      gap: 16px;
+                      grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+                      gap: 14px;
                   }}
 
                   .card {{
                       display: block;
-                      padding: 22px;
-                      background: white;
-                      border: 1px solid #e5e7eb;
-                      border-radius: 12px;
-                      text-decoration: none;
+                      min-height: 156px;
+                      padding: 20px;
+                      border: 1px solid var(--line);
+                      border-radius: 16px;
+                      background: var(--surface);
                       color: inherit;
+                      text-decoration: none;
+                      box-shadow: 0 7px 20px rgba(23, 32, 51, 0.04);
+                      transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
                   }}
 
                   .card:hover {{
-                      border-color: #315fe8;
+                      border-color: var(--accent);
+                      box-shadow: var(--shadow);
+                      transform: translateY(-2px);
                   }}
 
-                  .module {{
-                      font-size: 17px;
-                      font-weight: 700;
-                      margin-bottom: 8px;
-                  }}
+                  .card-topline {{ display: flex; justify-content: space-between; align-items: center; }}
+                  .module-kicker {{ color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; }}
+                  .card-arrow {{ color: var(--accent); font-size: 20px; line-height: 1; }}
+                  .module {{ margin: 20px 0 5px; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }}
+                  .label {{ color: var(--ink); font-size: 13px; font-weight: 700; }}
+                  .evidence {{ margin-top: 12px; color: var(--muted); font-size: 12px; }}
 
-                  .label {{
-                      font-size: 13px;
-                      color: #6b7280;
-                  }}
-
-                  .evidence {{
-                      margin-top: 12px;
-                      font-size: 12px;
-                      color: #9ca3af;
-                  }}
-
-                  .summary {{
-                      display: flex;
-                      flex-wrap: wrap;
-                      gap: 10px;
-                      margin: 0 0 24px;
-                  }}
-
-                  .count {{
-                      padding: 8px 12px;
-                      border-radius: 999px;
-                      font-size: 12px;
-                      font-weight: 700;
-                  }}
-
-                  .pass {{ background: #ecfdf5; color: #047857; }}
-                  .fail {{ background: #fef2f2; color: #b91c1c; }}
-                  .gap {{ background: #fff7ed; color: #c2410c; }}
+                  .summary {{ display: flex; flex-wrap: wrap; gap: 9px; margin: 0 0 24px; }}
+                  .count {{ padding: 7px 11px; border-radius: 999px; font-size: 11px; font-weight: 800; }}
+                  .pass {{ background: #e9f8ef; color: #18734a; }}
+                  .fail {{ background: #ffebe8; color: #b33a2c; }}
+                  .gap {{ background: #fff3dc; color: #9a5b08; }}
 
                   .coverage {{
                       overflow-x: auto;
-                      background: white;
-                      border: 1px solid #e5e7eb;
-                      border-radius: 12px;
+                      border: 1px solid var(--line);
+                      border-radius: 16px;
+                      background: var(--surface);
+                      box-shadow: var(--shadow);
                   }}
 
-                  .coverage table {{
-                      width: 100%;
-                      min-width: 1100px;
-                      border-collapse: collapse;
-                  }}
+                  .coverage table {{ width: 100%; min-width: 1100px; border-collapse: collapse; }}
+                  .coverage th, .coverage td {{ padding: 12px 11px; border-bottom: 1px solid #edf0f4; text-align: left; vertical-align: top; font-size: 12px; }}
+                  .coverage th {{ background: #f7f9fc; color: var(--muted); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }}
+                  .coverage tr:hover td {{ background: #fbfcfe; }}
+                  .coverage small {{ color: var(--muted); }}
+                  .footer {{ margin-top: 28px; color: var(--muted); font-size: 12px; }}
 
-                  .coverage th,
-                  .coverage td {{
-                      padding: 10px;
-                      border-bottom: 1px solid #eef0f4;
-                      text-align: left;
-                      vertical-align: top;
-                      font-size: 12px;
-                  }}
-
-                  .coverage th {{
-                      background: #f9fafb;
-                      color: #6b7280;
-                  }}
-
-                  .coverage small {{ color: #6b7280; }}
-
-                  .footer {{
-                      margin-top: 35px;
-                      color: #9ca3af;
-                      font-size: 12px;
+                  @media (max-width: 640px) {{
+                      body {{ padding: 24px 10px 36px; }}
+                      .card {{ min-height: 140px; }}
                   }}
               </style>
           </head>
