@@ -9,7 +9,7 @@ def test_doc(page: Page) -> None:
 
     page.get_by_role("button", name="doc").click()
 
-    editor = page.locator("#editor")
+    editor = page.locator("#editor",has_text="Start writing,or share this with someone.")
 
     # ==================== TEXT EDITING ====================
 

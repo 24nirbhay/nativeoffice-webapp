@@ -24,11 +24,7 @@ def test_nav(page: Page) -> None:
 
     # ---------------- DOCUMENT ----------------
 
-    page.get_by_role(
-        "button",
-        name="Create new",
-        exact=True
-    ).click()
+    page.locator("#hero-create").click()
 
     modal = page.locator("#modal-shell")
     expect(modal).to_be_visible()
@@ -49,11 +45,7 @@ def test_nav(page: Page) -> None:
 
     # ---------------- SPREADSHEET ----------------
 
-    page.get_by_role(
-        "button",
-        name="Create new",
-        exact=True
-    ).click()
+    page.locator("#hero-create").click()
 
     modal = page.locator("#modal-shell")
     expect(modal).to_be_visible()
@@ -74,11 +66,7 @@ def test_nav(page: Page) -> None:
 
     # ---------------- PRESENTATION ----------------
 
-    page.get_by_role(
-        "button",
-        name="Create new",
-        exact=True
-    ).click()
+    page.locator("#hero-create").click()
 
     modal = page.locator("#modal-shell")
     expect(modal).to_be_visible()
