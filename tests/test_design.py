@@ -1,7 +1,9 @@
 import re
 from playwright.sync_api import Playwright,Page, sync_playwright, expect
+from qa.test_cases import test_case as link_test_case
 
 
+@link_test_case("TC-DESIGN-001")
 def test_design(page: Page) -> None:
 
     page.goto("https://tools.nativeoffice.online/")

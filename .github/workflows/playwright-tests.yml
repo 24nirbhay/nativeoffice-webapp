@@ -97,6 +97,7 @@ jobs:
           )
 
           cards = []
+          cases = {}
 
           for module in modules:
               report = module / "report.html"
@@ -104,11 +105,45 @@ jobs:
               if not report.exists():
                   continue
 
+              manifest_path = module / "qa-test-case-results.json"
+              manifest = (
+                  __import__("json").loads(manifest_path.read_text(encoding="utf-8"))
+                  if manifest_path.exists()
+                  else {"cases": []}
+              )
+
               test_results = module / "test-results"
-              screenshots = list(test_results.rglob("*.png")) if test_results.exists() else []
-              traces = list(test_results.rglob("trace.zip")) if test_results.exists() else []
+              evidence_files = (
+                  sorted(
+                      path for path in test_results.rglob("*")
+                      if path.is_file() and path.suffix.lower() in {".png", ".zip", ".webm", ".txt"}
+                  )
+                  if test_results.exists()
+                  else []
+              )
+
+              for case in manifest.get("cases", []):
+                  case_id = case["id"]
+                  existing = cases.get(case_id)
+                  if existing is None or existing["status"].startswith("NOT TESTED"):
+                      case["report_link"] = f"{module.name}/report.html"
+                      case["evidence_links"] = (
+                          [
+                              {
+                                  "label": path.name,
+                                  "href": f"{module.name}/{path.relative_to(module).as_posix()}",
+                              }
+                              for path in evidence_files
+                          ]
+                          if not case["status"].startswith("NOT TESTED")
+                          else []
+                      )
+                      cases[case_id] = case
 
               evidence = []
+
+              screenshots = [path for path in evidence_files if path.suffix.lower() == ".png"]
+              traces = [path for path in evidence_files if path.name == "trace.zip"]
 
               if screenshots:
                   evidence.append(
@@ -142,6 +177,39 @@ jobs:
               if status_file.exists()
               else "0"
           )
+
+          ordered_cases = sorted(cases.values(), key=lambda case: case["id"])
+          counts = {
+              "PASS": sum(case["status"] == "PASS" for case in ordered_cases),
+              "FAIL": sum(case["status"] in {"FAIL", "ERROR"} for case in ordered_cases),
+              "NOT TESTED": sum(case["status"].startswith("NOT TESTED") for case in ordered_cases),
+          }
+
+          coverage_rows = []
+          for case in ordered_cases:
+              evidence_links = "<br>".join(
+                  f'<a href="{escape(item["href"])}" target="_blank">{escape(item["label"])}</a>'
+                  for item in case.get("evidence_links", [])
+              ) or "None"
+              report_link = (
+                  f'<a href="{escape(case["report_link"])}">Open report</a>'
+                  if case.get("report_link")
+                  else ""
+              )
+              coverage_rows.append(
+                  f"""
+                  <tr>
+                      <td><strong>{escape(case["id"])}</strong><br><small>{escape(case["title"])}</small></td>
+                      <td>{escape(case["module"])}</td>
+                      <td>{escape(case["test_type"])}</td>
+                      <td>{escape(case["severity"])}</td>
+                      <td>{escape(case["priority"])}</td>
+                      <td><strong>{escape(case["status"])}</strong><br><small>{escape(case["actual_result"])}</small></td>
+                      <td>{escape(case["automated_test_reference"]) or "Not automated"}<br>{report_link}</td>
+                      <td>{evidence_links}</td>
+                  </tr>
+                  """
+              )
 
           overall = "PASS" if status == "0" else "FAILURES DETECTED"
 
@@ -229,6 +297,53 @@ jobs:
                       color: #9ca3af;
                   }}
 
+                  .summary {{
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: 10px;
+                      margin: 0 0 24px;
+                  }}
+
+                  .count {{
+                      padding: 8px 12px;
+                      border-radius: 999px;
+                      font-size: 12px;
+                      font-weight: 700;
+                  }}
+
+                  .pass {{ background: #ecfdf5; color: #047857; }}
+                  .fail {{ background: #fef2f2; color: #b91c1c; }}
+                  .gap {{ background: #fff7ed; color: #c2410c; }}
+
+                  .coverage {{
+                      overflow-x: auto;
+                      background: white;
+                      border: 1px solid #e5e7eb;
+                      border-radius: 12px;
+                  }}
+
+                  .coverage table {{
+                      width: 100%;
+                      min-width: 1100px;
+                      border-collapse: collapse;
+                  }}
+
+                  .coverage th,
+                  .coverage td {{
+                      padding: 10px;
+                      border-bottom: 1px solid #eef0f4;
+                      text-align: left;
+                      vertical-align: top;
+                      font-size: 12px;
+                  }}
+
+                  .coverage th {{
+                      background: #f9fafb;
+                      color: #6b7280;
+                  }}
+
+                  .coverage small {{ color: #6b7280; }}
+
                   .footer {{
                       margin-top: 35px;
                       color: #9ca3af;
@@ -250,8 +365,35 @@ jobs:
                       {escape(overall)}
                   </div>
 
+                  <div class="summary">
+                      <span class="count pass">PASS {counts["PASS"]}</span>
+                      <span class="count fail">FAIL / ERROR {counts["FAIL"]}</span>
+                      <span class="count gap">NOT TESTED {counts["NOT TESTED"]}</span>
+                  </div>
+
                   <div class="grid">
                       {"".join(cards)}
+                  </div>
+
+                  <h2>Test-case coverage</h2>
+                  <div class="coverage">
+                      <table>
+                          <thead>
+                              <tr>
+                                  <th>Test Case</th>
+                                  <th>Module</th>
+                                  <th>Type</th>
+                                  <th>Severity</th>
+                                  <th>Priority</th>
+                                  <th>Status / Actual Result</th>
+                                  <th>Automated Test / Report</th>
+                                  <th>Evidence</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {"".join(coverage_rows)}
+                          </tbody>
+                      </table>
                   </div>
 
                   <div class="footer">

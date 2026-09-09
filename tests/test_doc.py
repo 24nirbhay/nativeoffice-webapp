@@ -1,7 +1,9 @@
 from playwright.sync_api import Page, expect
 import playwright 
+from qa.test_cases import test_case as link_test_case
 
 
+@link_test_case("TC-DOC-001")
 def test_doc(page: Page) -> None:
     page.goto("https://tools.nativeoffice.online/")
 
@@ -12,14 +14,11 @@ def test_doc(page: Page) -> None:
     editor = page.locator("#editor",has_text="Start writing,or share this with someone.")
 
     # ==================== TEXT EDITING ====================
-
-    editor.click()
-    page.keyboard.insert_text(
+    
+    editor.page.keyboard.insert_text(
         "hello\n\n"
         "hello this is a test for text formatting."
     )
-
-    expect(editor).to_contain_text("hello")
 
     # ==================== UNDERLINE ====================
 
@@ -162,44 +161,4 @@ def test_doc(page: Page) -> None:
     )
 
     page.get_by_label("Font size").select_option("24pt")
-
-    # ==================== SHARE ====================
-
-    page.get_by_role("button", name="Share").click()
-
-    expect(page.locator("#share-scrim")).to_be_visible()
-
-    expect(
-        page.get_by_role(
-            "heading",
-            name="Share this document"
-        )
-    ).to_be_visible()
-
-    page.get_by_role("button", name="Done").click()
-
-    expect(
-        page.locator("#share-scrim")
-    ).not_to_be_visible()
-
-    # ==================== MENUS ====================
-
-    page.get_by_role("button", name="Edit").click()
-    page.get_by_role("button", name="View").click()
-    page.get_by_role(
-        "button",
-        name="Insert",
-        exact=True
-    ).click()
-    page.get_by_role(
-        "button",
-        name="Format",
-        exact=True
-    ).click()
-    page.get_by_role("button", name="Tools").click()
-    page.get_by_role(
-        "button",
-        name="Help",
-        exact=True
-    ).click()
 

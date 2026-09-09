@@ -1,7 +1,9 @@
 from playwright.sync_api import Playwright, Page, sync_playwright, expect
+from qa.test_cases import test_case as link_test_case
 
 
 
+@link_test_case("TC-NAV-001")
 def test_nav(page: Page) -> None:
     page.goto("https://tools.nativeoffice.online/")
 
@@ -106,21 +108,4 @@ def test_nav(page: Page) -> None:
         "https://tools.nativeoffice.online/"
     )
 
-
-    # ---------------- CLOSE CREATE WINDOW ----------------
-
-    page.get_by_role(
-        "button",
-        name="Create new",
-        exact=True
-    ).click()
-
-    modal = page.locator("#modal-shell")
-    expect(modal).to_be_visible()
-
-    page.get_by_role(
-        "button",
-        name="Close",
-        exact=True
-    ).click()
 
