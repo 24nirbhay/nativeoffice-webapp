@@ -9,6 +9,15 @@ from html import escape
 import pytest
 from qa.test_cases import CASES, get_case
 
+def browser_context_args(browser_context_args, playwright):
+
+    mobile_device = playwright.devices["iPhone 12"] 
+
+    return {
+        **browser_context_args,
+        **mobile_device,
+    }
+
 
 pytest_html = import_module("pytest_html")
 metadata_key = import_module("pytest_metadata.plugin").metadata_key

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-09 12:54:04 UTC",
+  "generated_at": "2026-09-18 05:52:38 UTC",
   "exit_status": 1,
   "cases": [
     {
@@ -18,7 +18,7 @@
         "Return home and close the create dialog."
       ],
       "expected_result": "Each navigation view and create option is available, opens successfully, and returns to the home workspace.",
-      "actual_result": "FAIL: tests\\test_nav.py:74: AssertionError",
+      "actual_result": "FAIL: ..\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py:632: TimeoutError",
       "status": "FAIL",
       "severity": "Medium",
       "priority": "P2",
@@ -44,8 +44,8 @@
         "Open the primary document menus."
       ],
       "expected_result": "Document content accepts the editing actions, formatting controls respond, sharing opens and closes, and menus are available.",
-      "actual_result": "Execution passed; pytest assertions completed.",
-      "status": "PASS",
+      "actual_result": "FAIL: ..\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py:632: TimeoutError",
+      "status": "FAIL",
       "severity": "High",
       "priority": "P1",
       "automation_status": "Automated",
@@ -70,8 +70,8 @@
         "Enter a long value and return to the home workspace."
       ],
       "expected_result": "Cell values persist after entry, the formula evaluates to 4, long text is accepted, and navigation returns home.",
-      "actual_result": "Execution passed; pytest assertions completed.",
-      "status": "PASS",
+      "actual_result": "FAIL: tests\\test_sheets.py:22: AssertionError",
+      "status": "FAIL",
       "severity": "High",
       "priority": "P1",
       "automation_status": "Automated",
@@ -96,7 +96,7 @@
         "Open image insertion and submit an image address."
       ],
       "expected_result": "Presentation content can be edited, slides can be added and deleted, and the image insertion workflow accepts the address.",
-      "actual_result": "FAIL: ..\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py:632: Error",
+      "actual_result": "FAIL: ..\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py:632: TimeoutError",
       "status": "FAIL",
       "severity": "Medium",
       "priority": "P2",
@@ -122,8 +122,8 @@
         "Add shapes and text tools, then return home."
       ],
       "expected_result": "Design controls open and apply selections, pages can be added, and the user can return to the home workspace.",
-      "actual_result": "Execution passed; pytest assertions completed.",
-      "status": "PASS",
+      "actual_result": "FAIL: ..\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py:632: TimeoutError",
+      "status": "FAIL",
       "severity": "Medium",
       "priority": "P3",
       "automation_status": "Automated",
