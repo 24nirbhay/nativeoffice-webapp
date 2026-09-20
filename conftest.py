@@ -16,6 +16,7 @@ def browser_context_args(browser_context_args, playwright):
     return {
         **browser_context_args,
         **mobile_device,
+        "storage_state": str(Path(__file__).parent / "auth.json"),
     }
 
 
