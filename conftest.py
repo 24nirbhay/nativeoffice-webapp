@@ -9,15 +9,57 @@ from html import escape
 import pytest
 from qa.test_cases import CASES, get_case
 
+
+def _has_real_auth_session() -> bool:
+    auth_path = Path(__file__).parent / "auth.json"
+    if not auth_path.exists():
+        return False
+
+    try:
+        payload = json.loads(auth_path.read_text(encoding="utf-8"))
+    except (TypeError, ValueError):
+        return False
+
+    cookies = payload.get("cookies", [])
+    if cookies:
+        for cookie in cookies:
+            name = str(cookie.get("name", "")).lower()
+            if name not in {"no_session", "__cf_bm", "_ga", "_gid"} and name:
+                return True
+
+    origins = payload.get("origins", [])
+    for origin in origins:
+        for item in origin.get("localStorage", []):
+            name = str(item.get("name", "")).lower()
+            if name and "session" in name or "auth" in name:
+                return True
+
+    return False
+
+
 def browser_context_args(browser_context_args, playwright):
+    mobile_device = playwright.devices["iPhone 12"]
 
-    mobile_device = playwright.devices["iPhone 12"] 
-
-    return {
+    context = {
         **browser_context_args,
         **mobile_device,
-        "storage_state": str(Path(__file__).parent / "auth.json"),
     }
+
+    if _has_real_auth_session():
+        context["storage_state"] = str(Path(__file__).parent / "auth.json")
+
+    return context
+
+
+@pytest.fixture(autouse=True)
+def authenticated_homepage(page):
+    page.goto("https://tools.nativeoffice.online/", wait_until="domcontentloaded")
+
+    if page.get_by_role("link", name="Sign in", exact=True).is_visible(timeout=3000):
+        page.get_by_role("link", name="Sign in", exact=True).click()
+        page.wait_for_url("**/tools.nativeoffice.online/**", timeout=30000)
+
+    page.goto("https://tools.nativeoffice.online/", wait_until="domcontentloaded")
 
 
 pytest_html = import_module("pytest_html")

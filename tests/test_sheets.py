@@ -7,12 +7,9 @@ def test_sheets(page: Page) -> None:
     page.goto("https://tools.nativeoffice.online/")
 
     # Create spreadsheet
-    page.locator("#hero-create").click()
+    page.get_by_role("button", name="Create new", exact=True).click()
+    spreadsheet = page.get_by_role("button", name="Spreadsheet Data & formulas", exact=True)
 
-    modal = page.locator("#modal-shell")
-    expect(modal).to_be_visible()
-
-    spreadsheet = modal.locator('[data-create-kind="sheet"]')
     expect(spreadsheet).to_be_visible()
     expect(spreadsheet).to_be_enabled()
     spreadsheet.click()
@@ -53,7 +50,8 @@ def test_sheets(page: Page) -> None:
 
 
 
-    page.locator('a.brand[href="/"]').click()
+    page.goto("https://tools.nativeoffice.online/")
     expect(page).to_have_url(
         "https://tools.nativeoffice.online/"
     )
+    expect(page.get_by_role("button", name="Create new", exact=True)).to_be_visible()

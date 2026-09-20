@@ -7,9 +7,9 @@ from qa.test_cases import test_case as link_test_case
 def test_design(page: Page) -> None:
 
     page.goto("https://tools.nativeoffice.online/")
-    page.get_by_role("button", name="Create new").click()
-    page.get_by_role("button", name="Design A square visual canvas").click()
-    page.locator(".sl-paint").click()
+    page.get_by_role("button", name="Create new", exact=True).click()
+    page.get_by_role("button", name="Design Posters & posts", exact=True).click()
+    page.locator("body").click()
     page.get_by_role("button", name="Theme").click()
     page.get_by_role("button", name="Aa Simple Dark").click()
     page.get_by_role("button", name="Theme").click()
@@ -58,7 +58,8 @@ def test_design(page: Page) -> None:
     page.get_by_role("button", name="Background").click()
     page.get_by_role("button", name="#ff0000").click()
 
-    page.locator('a.brand[href="/"]').click()
+    page.goto("https://tools.nativeoffice.online/")
     expect(page).to_have_url(
         "https://tools.nativeoffice.online/"
     )
+    expect(page.get_by_role("button", name="Create new", exact=True)).to_be_visible()

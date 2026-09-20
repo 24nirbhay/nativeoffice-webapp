@@ -9,9 +9,11 @@ def test_doc(page: Page) -> None:
 
     # ==================== OPEN DOCUMENT ====================
 
-    page.get_by_role("button", name="doc").click()
+    page.get_by_role("button", name="Create new", exact=True).click()
+    assert page.locator("#modal-shell").is_visible()
+    page.locator('#modal-shell button[data-create-kind="doc"]').click()
 
-    editor = page.locator("#editor",has_text="Start writing,or share this with someone.")
+    editor = page.locator("#editor", has_text="Start writing,or share this with someone.")
 
     # ==================== TEXT EDITING ====================
     
