@@ -1,71 +1,34 @@
-import base64
 import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from importlib import import_module
-from html import escape
 
+import allure
 import pytest
 from qa.test_cases import CASES, get_case
 
-
-def _has_real_auth_session() -> bool:
-    auth_path = Path(__file__).parent / "auth.json"
-    if not auth_path.exists():
-        return False
-
-    try:
-        payload = json.loads(auth_path.read_text(encoding="utf-8"))
-    except (TypeError, ValueError):
-        return False
-
-    cookies = payload.get("cookies", [])
-    if cookies:
-        for cookie in cookies:
-            name = str(cookie.get("name", "")).lower()
-            if name not in {"no_session", "__cf_bm", "_ga", "_gid"} and name:
-                return True
-
-    origins = payload.get("origins", [])
-    for origin in origins:
-        for item in origin.get("localStorage", []):
-            name = str(item.get("name", "")).lower()
-            if name and "session" in name or "auth" in name:
-                return True
-
-    return False
+AUTH_STATE = Path(__file__).parent / "auth.json"
 
 
 def browser_context_args(browser_context_args, playwright):
     mobile_device = playwright.devices["iPhone 12"]
 
+    if not AUTH_STATE.exists():
+        raise pytest.UsageError(f"Missing authenticated Playwright state: {AUTH_STATE}")
+
     context = {
         **browser_context_args,
         **mobile_device,
+        "storage_state": str(AUTH_STATE),
     }
-
-    if _has_real_auth_session():
-        context["storage_state"] = str(Path(__file__).parent / "auth.json")
 
     return context
 
 
-@pytest.fixture(autouse=True)
-def authenticated_homepage(page):
-    page.goto("https://tools.nativeoffice.online/", wait_until="domcontentloaded")
-
-    if page.get_by_role("link", name="Sign in", exact=True).is_visible(timeout=3000):
-        page.get_by_role("link", name="Sign in", exact=True).click()
-        page.wait_for_url("**/tools.nativeoffice.online/**", timeout=30000)
-
-    page.goto("https://tools.nativeoffice.online/", wait_until="domcontentloaded")
-
-
-pytest_html = import_module("pytest_html")
-metadata_key = import_module("pytest_metadata.plugin").metadata_key
 _ACTIVE_REPORT_DIR = None
 _RUNTIME_RESULTS = {}
+metadata_key = import_module("pytest_metadata.plugin").metadata_key
 
 
 def _case_for_item(item):
@@ -228,27 +191,6 @@ def pytest_configure(config):
         )
 
 
-def pytest_html_report_title(report):
-    report.title = "NativeOffice QA Test Report"
-
-
-def pytest_html_results_table_header(cells):
-    cells.insert(
-        2,
-        '<th class="qa-case-header">Test Case</th>',
-    )
-
-    cells.insert(
-        3,
-        '<th class="qa-area-header">Area</th>',
-    )
-
-    cells.insert(
-        4,
-        '<th class="qa-impact-header">Impact</th>',
-    )
-
-
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
@@ -263,24 +205,14 @@ def pytest_runtest_makereport(item, call):
     report.severity = case.severity if case else "Unassigned"
     report.test_type = case.test_type if case else "Unclassified"
 
-    extras = getattr(report, "extras", [])
-
     if case and report.when == "call":
         runtime = _runtime_result(item, report)
         item.config._qa_results[case.id] = runtime
         _RUNTIME_RESULTS[case.id] = runtime
-        extras.append(
-            pytest_html.extras.text(
-                f"{case.id} | {case.title} | {case.test_type}",
-                name="Test Case",
-            )
-        )
-        extras.append(
-            pytest_html.extras.text(
-                f"{case.priority} | {case.severity}",
-                name="Priority / Severity",
-            )
-        )
+        allure.dynamic.feature(case.module)
+        allure.dynamic.story(case.title)
+        allure.dynamic.label("testCaseId", case.id)
+        allure.dynamic.tag(case.test_type)
 
     if report.when == "call" and report.failed:
 
@@ -318,26 +250,17 @@ def pytest_runtest_makereport(item, call):
                 screenshot_path.write_bytes(
                     screenshot_bytes
                 )
-
-                encoded = base64.b64encode(
-                    screenshot_bytes
-                ).decode("utf-8")
-
-                extras.append(
-                    pytest_html.extras.image(
-                        encoded,
-                        mime_type="image/png",
-                        extension="png",
-                        name="Failure Screenshot",
-                    )
+                allure.attach(
+                    screenshot_bytes,
+                    name="Failure Screenshot",
+                    attachment_type=allure.attachment_type.PNG,
                 )
 
             except Exception as exc:
-                extras.append(
-                    pytest_html.extras.text(
-                        f"Screenshot capture failed: {exc}",
-                        name="Screenshot Error",
-                    )
+                allure.attach(
+                    f"Screenshot capture failed: {exc}",
+                    name="Screenshot Error",
+                    attachment_type=allure.attachment_type.TEXT,
                 )
 
         # --------------------------------------------------
@@ -359,61 +282,19 @@ def pytest_runtest_makereport(item, call):
                     report_dir
                 ).as_posix()
 
-                extras.append(
-                    pytest_html.extras.html(
-                        f"""
-                        <div class="qa-evidence">
-                            <a
-                                href="{relative_path}"
-                                target="_blank"
-                                class="qa-button"
-                            >
-                                {escape(report.case_id)}: View Playwright Screenshot
-                            </a>
-                        </div>
-                        """
-                    )
-                )
-
-            # Playwright traces
-            traces = list(
-                test_results_dir.rglob("trace.zip")
-            )
-
-            for trace in traces:
-
-                relative_path = trace.relative_to(
-                    report_dir
-                ).as_posix()
-
-                extras.append(
-                    pytest_html.extras.html(
-                        f"""
-                        <div class="qa-evidence">
-                            <a
-                                href="{relative_path}"
-                                target="_blank"
-                                class="qa-button"
-                            >
-                                {escape(report.case_id)}: Open Playwright Trace
-                            </a>
-                        </div>
-                        """
-                    )
+                allure.attach.file(
+                    str(screenshot),
+                    name=f"{report.case_id} Playwright Screenshot",
+                    attachment_type=allure.attachment_type.PNG,
                 )
 
         # Evidence path
         if screenshot_path.exists():
-            extras.append(
-                pytest_html.extras.text(
-                    screenshot_path.relative_to(
-                        report_dir
-                    ).as_posix(),
-                    name="Evidence Path",
-                )
+            allure.attach(
+                screenshot_path.relative_to(report_dir).as_posix(),
+                name="Evidence Path",
+                attachment_type=allure.attachment_type.TEXT,
             )
-
-    report.extras = extras
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -435,7 +316,7 @@ def pytest_sessionfinish(session, exitstatus):
     )
 
 
-def pytest_html_results_table_row(report, cells):
+def _legacy_html_results_table_row(report, cells):
 
     area_class = (
         "qa-ui"
@@ -491,7 +372,7 @@ def pytest_html_results_table_row(report, cells):
     )
 
 
-def pytest_html_results_summary(prefix, summary, postfix):
+def _legacy_html_results_summary(prefix, summary, postfix):
     counts = {
         "PASS": 0,
         "FAIL": 0,

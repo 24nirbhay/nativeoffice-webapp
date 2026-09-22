@@ -1,1 +1,5 @@
 auth.json
+.playwright*
+**/User Data/
+allure-results/
+allure-report/

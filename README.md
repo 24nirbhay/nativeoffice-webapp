@@ -10,7 +10,7 @@ Documents • Spreadsheets • Presentations • Navigation • Sharing • UI
 
 ### Stack
 
-Python • Pytest • Playwright • pytest-html • GitHub Actions
+Python • Pytest • Playwright • Allure Reports • GitHub Actions
 
 ### Run
 
@@ -18,3 +18,11 @@ Python • Pytest • Playwright • pytest-html • GitHub Actions
 pip install -r requirements.txt
 playwright install
 pytest
+
+
+Generate and view an Allure report locally:
+
+```bash
+pytest --alluredir=allure-results
+allure serve allure-results
+```

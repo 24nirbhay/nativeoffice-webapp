@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -39,389 +38,82 @@ jobs:
         run: |
           playwright install --with-deps chromium
 
-      - name: Create report directory
+      - name: Install Allure CLI
+        uses: simple-elf/allure-commandline@master
+        with:
+          allure-version: 2.29.0
+
+      - name: Create report directories
         run: |
           RUN_ID="$(date -u +'%Y%m%d-%H%M%S')"
           echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
-
-          mkdir -p "site/$RUN_ID"
+          mkdir -p "site/$RUN_ID/allure-results"
 
       - name: Run test modules
         continue-on-error: true
         shell: bash
         run: |
           set +e
-
           OVERALL_STATUS=0
 
           for TEST_FILE in tests/test_*.py; do
-
             MODULE="$(basename "$TEST_FILE" .py)"
-
             MODULE_DIR="$GITHUB_WORKSPACE/site/$RUN_ID/$MODULE"
-
-            mkdir -p "$MODULE_DIR/screenshots"
             mkdir -p "$MODULE_DIR/test-results"
 
-            echo "========================================"
             echo "Running: $MODULE"
-            echo "========================================"
-
-            REPORT_DIR="$MODULE_DIR" \
-            pytest "$TEST_FILE" \
-              --html="$MODULE_DIR/report.html" \
-              --self-contained-html \
+            REPORT_DIR="$MODULE_DIR" pytest "$TEST_FILE" \
+              --alluredir="$GITHUB_WORKSPACE/site/$RUN_ID/allure-results" \
               --output="$MODULE_DIR/test-results"
 
             STATUS=$?
-
             if [ "$STATUS" -ne 0 ]; then
               OVERALL_STATUS=1
             fi
-
           done
 
           echo "$OVERALL_STATUS" > "site/$RUN_ID/test-status.txt"
 
-      - name: Generate master dashboard
-        shell: python
+      - name: Generate Allure report
+        if: always()
         run: |
-          from pathlib import Path
-          from html import escape
+          allure generate "site/$RUN_ID/allure-results" \
+            --clean \
+            --output "site/$RUN_ID/allure-report"
 
-          root = Path("site") / "${{ env.RUN_ID }}"
-
-          modules = sorted(
-              p for p in root.iterdir()
-              if p.is_dir()
-          )
-
-          cards = []
-          cases = {}
-
-          for module in modules:
-              report = module / "report.html"
-
-              if not report.exists():
-                  continue
-
-              manifest_path = module / "qa-test-case-results.json"
-              manifest = (
-                  __import__("json").loads(manifest_path.read_text(encoding="utf-8"))
-                  if manifest_path.exists()
-                  else {"cases": []}
-              )
-
-              test_results = module / "test-results"
-              evidence_files = (
-                  sorted(
-                      path for path in test_results.rglob("*")
-                      if path.is_file() and path.suffix.lower() in {".png", ".zip", ".webm", ".txt"}
-                  )
-                  if test_results.exists()
-                  else []
-              )
-
-              for case in manifest.get("cases", []):
-                  case_id = case["id"]
-                  existing = cases.get(case_id)
-                  if existing is None or existing["status"].startswith("NOT TESTED"):
-                      case["report_link"] = f"{module.name}/report.html"
-                      case["evidence_links"] = (
-                          [
-                              {
-                                  "label": path.name,
-                                  "href": f"{module.name}/{path.relative_to(module).as_posix()}",
-                              }
-                              for path in evidence_files
-                          ]
-                          if not case["status"].startswith("NOT TESTED")
-                          else []
-                      )
-                      cases[case_id] = case
-
-              evidence = []
-
-              screenshots = [path for path in evidence_files if path.suffix.lower() == ".png"]
-              traces = [path for path in evidence_files if path.name == "trace.zip"]
-
-              if screenshots:
-                  evidence.append(
-                      f"{len(screenshots)} screenshot(s)"
-                  )
-
-              if traces:
-                  evidence.append(
-                      f"{len(traces)} trace(s)"
-                  )
-
-              evidence_text = (
-                  " • ".join(evidence)
-                  if evidence
-                  else "No failure evidence"
-              )
-
-              cards.append(
-                  f"""
-                  <a class="card" href="{escape(module.name)}/report.html">
-                      <div class="card-topline">
-                          <span class="module-kicker">TEST MODULE</span>
-                          <span class="card-arrow" aria-hidden="true">↗</span>
-                      </div>
-                      <div class="module">{escape(module.name)}</div>
-                      <div class="label">Open test report</div>
-                      <div class="evidence">{escape(evidence_text)}</div>
-                  </a>
-                  """
-              )
-
-          status_file = root / "test-status.txt"
-          status = (
-              status_file.read_text().strip()
-              if status_file.exists()
-              else "0"
-          )
-
-          ordered_cases = sorted(cases.values(), key=lambda case: case["id"])
-          counts = {
-              "PASS": sum(case["status"] == "PASS" for case in ordered_cases),
-              "FAIL": sum(case["status"] in {"FAIL", "ERROR"} for case in ordered_cases),
-              "NOT TESTED": sum(case["status"].startswith("NOT TESTED") for case in ordered_cases),
-          }
-
-          coverage_rows = []
-          for case in ordered_cases:
-              evidence_links = "<br>".join(
-                  f'<a href="{escape(item["href"])}" target="_blank">{escape(item["label"])}</a>'
-                  for item in case.get("evidence_links", [])
-              ) or "None"
-              report_link = (
-                  f'<a href="{escape(case["report_link"])}">Open report</a>'
-                  if case.get("report_link")
-                  else ""
-              )
-              coverage_rows.append(
-                  f"""
-                  <tr>
-                      <td><strong>{escape(case["id"])}</strong><br><small>{escape(case["title"])}</small></td>
-                      <td>{escape(case["module"])}</td>
-                      <td>{escape(case["test_type"])}</td>
-                      <td>{escape(case["severity"])}</td>
-                      <td>{escape(case["priority"])}</td>
-                      <td><strong>{escape(case["status"])}</strong><br><small>{escape(case["actual_result"])}</small></td>
-                      <td>{escape(case["automated_test_reference"]) or "Not automated"}<br>{report_link}</td>
-                      <td>{evidence_links}</td>
-                  </tr>
-                  """
-              )
-
-          overall = "PASS" if status == "0" else "FAILURES DETECTED"
-
-          html = f"""
+      - name: Set Allure report as Pages entry point
+        if: always()
+        run: |
+          cat > site/index.html <<EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-
-              <title>NativeOffice QA Dashboard</title>
-
-              <style>
-                  * {{ box-sizing: border-box; }}
-
-                  :root {{
-                      --ink: #172033;
-                      --muted: #687386;
-                      --line: #dfe5ee;
-                      --canvas: #f3f6fa;
-                      --surface: #ffffff;
-                      --accent: #e85d3f;
-                      --shadow: 0 14px 34px rgba(23, 32, 51, 0.08);
-                  }}
-
-                  body {{
-                      margin: 0;
-                      padding: clamp(20px, 5vw, 64px) clamp(14px, 4vw, 48px);
-                      font-family: "Avenir Next", "Segoe UI", sans-serif;
-                      background: var(--canvas);
-                      color: var(--ink);
-                      line-height: 1.45;
-                  }}
-
-                  .container {{ max-width: 1180px; margin: auto; }}
-
-                  h1 {{
-                      margin: 0 0 7px;
-                      font-size: clamp(27px, 4vw, 44px);
-                      letter-spacing: -1.2px;
-                      line-height: 1.05;
-                  }}
-
-                  h2 {{ margin: 38px 0 14px; font-size: 20px; letter-spacing: -0.3px; }}
-
-                  .subtitle {{ color: var(--muted); margin: 0 0 20px; font-size: 14px; }}
-
-                  .status {{
-                      display: inline-flex;
-                      margin-bottom: 24px;
-                      padding: 7px 11px;
-                      border: 1px solid #f2c9c1;
-                      border-radius: 999px;
-                      background: #fff1ee;
-                      color: #b33a2c;
-                      font-size: 12px;
-                      font-weight: 800;
-                      letter-spacing: 0.02em;
-                  }}
-
-                  .grid {{
-                      display: grid;
-                      grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
-                      gap: 14px;
-                  }}
-
-                  .card {{
-                      display: block;
-                      min-height: 156px;
-                      padding: 20px;
-                      border: 1px solid var(--line);
-                      border-radius: 16px;
-                      background: var(--surface);
-                      color: inherit;
-                      text-decoration: none;
-                      box-shadow: 0 7px 20px rgba(23, 32, 51, 0.04);
-                      transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
-                  }}
-
-                  .card:hover {{
-                      border-color: var(--accent);
-                      box-shadow: var(--shadow);
-                      transform: translateY(-2px);
-                  }}
-
-                  .card-topline {{ display: flex; justify-content: space-between; align-items: center; }}
-                  .module-kicker {{ color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; }}
-                  .card-arrow {{ color: var(--accent); font-size: 20px; line-height: 1; }}
-                  .module {{ margin: 20px 0 5px; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }}
-                  .label {{ color: var(--ink); font-size: 13px; font-weight: 700; }}
-                  .evidence {{ margin-top: 12px; color: var(--muted); font-size: 12px; }}
-
-                  .summary {{ display: flex; flex-wrap: wrap; gap: 9px; margin: 0 0 24px; }}
-                  .count {{ padding: 7px 11px; border-radius: 999px; font-size: 11px; font-weight: 800; }}
-                  .pass {{ background: #e9f8ef; color: #18734a; }}
-                  .fail {{ background: #ffebe8; color: #b33a2c; }}
-                  .gap {{ background: #fff3dc; color: #9a5b08; }}
-
-                  .coverage {{
-                      overflow-x: auto;
-                      border: 1px solid var(--line);
-                      border-radius: 16px;
-                      background: var(--surface);
-                      box-shadow: var(--shadow);
-                  }}
-
-                  .coverage table {{ width: 100%; min-width: 1100px; border-collapse: collapse; }}
-                  .coverage th, .coverage td {{ padding: 12px 11px; border-bottom: 1px solid #edf0f4; text-align: left; vertical-align: top; font-size: 12px; }}
-                  .coverage th {{ background: #f7f9fc; color: var(--muted); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }}
-                  .coverage tr:hover td {{ background: #fbfcfe; }}
-                  .coverage small {{ color: var(--muted); }}
-                  .footer {{ margin-top: 28px; color: var(--muted); font-size: 12px; }}
-
-                  @media (max-width: 640px) {{
-                      body {{ padding: 24px 10px 36px; }}
-                      .card {{ min-height: 140px; }}
-                  }}
-              </style>
+            <meta http-equiv="refresh" content="0; url=$RUN_ID/allure-report/index.html">
+            <meta name="robots" content="noindex">
           </head>
-
           <body>
-              <main class="container">
-
-                  <h1>NativeOffice QA Dashboard</h1>
-
-                  <div class="subtitle">
-                      Automated Playwright / Pytest execution
-                  </div>
-
-                  <div class="status">
-                      {escape(overall)}
-                  </div>
-
-                  <div class="summary">
-                      <span class="count pass">PASS {counts["PASS"]}</span>
-                      <span class="count fail">FAIL / ERROR {counts["FAIL"]}</span>
-                      <span class="count gap">NOT TESTED {counts["NOT TESTED"]}</span>
-                  </div>
-
-                  <div class="grid">
-                      {"".join(cards)}
-                  </div>
-
-                  <h2>Test-case coverage</h2>
-                  <div class="coverage">
-                      <table>
-                          <thead>
-                              <tr>
-                                  <th>Test Case</th>
-                                  <th>Module</th>
-                                  <th>Type</th>
-                                  <th>Severity</th>
-                                  <th>Priority</th>
-                                  <th>Status / Actual Result</th>
-                                  <th>Automated Test / Report</th>
-                                  <th>Evidence</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {"".join(coverage_rows)}
-                          </tbody>
-                      </table>
-                  </div>
-
-                  <div class="footer">
-                      Run: {escape(root.name)}
-                  </div>
-
-              </main>
+            Opening the latest Allure report...
           </body>
           </html>
-          """
-
-          (root / "index.html").write_text(
-              html,
-              encoding="utf-8"
-          )
-
-          # Root entry point for GitHub Pages.
-          (Path("site") / "index.html").write_text(
-              f"""
-              <!DOCTYPE html>
-              <html>
-              <head>
-                  <meta http-equiv="refresh"
-                        content="0; url={root.name}/index.html">
-              </head>
-              <body>
-                  Opening latest NativeOffice QA report...
-              </body>
-              </html>
-              """,
-              encoding="utf-8"
-          )
+          EOF
 
       - name: Configure GitHub Pages
+        if: always()
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: always()
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
 
       - name: Deploy to GitHub Pages
+        if: always()
         id: deployment
         uses: actions/deploy-pages@v4
 
       - name: Report URL
+        if: always()
         run: |
-          echo "QA Report:"
+          echo "Allure QA Report:"
           echo "${{ steps.deployment.outputs.page_url }}"
