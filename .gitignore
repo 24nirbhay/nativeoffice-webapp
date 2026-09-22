@@ -3,3 +3,6 @@ auth.json
 **/User Data/
 allure-results/
 allure-report/
+.pytest_cache/
+__pycache__/
+**/__pycache__/

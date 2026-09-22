@@ -38,10 +38,22 @@ jobs:
         run: |
           playwright install --with-deps chromium
 
-      - name: Install Allure CLI
-        uses: simple-elf/allure-commandline@master
+      - name: Setup Java for Allure
+        uses: actions/setup-java@v4
         with:
-          allure-version: 2.29.0
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Allure CLI
+        shell: bash
+        run: |
+          ALLURE_VERSION="2.29.0"
+          curl -fsSL \
+            -o "$RUNNER_TEMP/allure.zip" \
+            "https://github.com/allure-framework/allure2/releases/download/$ALLURE_VERSION/allure-$ALLURE_VERSION.zip"
+          unzip -q "$RUNNER_TEMP/allure.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/allure-$ALLURE_VERSION/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/allure-$ALLURE_VERSION/bin/allure" --version
 
       - name: Create report directories
         run: |
